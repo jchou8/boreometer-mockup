@@ -1,0 +1,66 @@
+.App {
+  font-family: Nunito, sans-serif;
+}
+
+.App-header {
+  background-color: #222;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+  color: white;
+  text-align: center;
+}
+
+.App-header h1 {
+  display: inline-block;
+  margin: 0;
+  vertical-align: bottom;
+}
+
+.App-logo {
+  display: inline-block;
+  width: auto;
+  height: 2rem;
+  margin-right: 1rem
+}
+
+Label {
+  font-size: 1.5rem;
+}
+
+.audience-splash {
+  margin-bottom: 3rem;
+}
+
+.audience-app-area {
+  text-align: center;
+}
+
+.audience-stats {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.bar-tooltip {
+  background-color: white;
+  border: 1px solid black;
+  padding: 1rem;
+}
+
+.rating-buttons {
+  width: 80%;
+}
+
+.rating-buttons Button{
+  width: 20%;
+}
+
+.rating-button {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.room-status {
+  margin-bottom: 2rem;
+}
