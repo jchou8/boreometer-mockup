@@ -1,9 +1,11 @@
 {
-  "name": "mockup",
+  "name": "boreometer-mockup",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://jchou8.github.io/boreometer-mockup/",
   "dependencies": {
     "bootstrap": "^4.0.0-beta.2",
+    "gh-pages": "^1.1.0",
     "jquery": "^3.2.1",
     "react": "^16.1.1",
     "react-dom": "^16.1.1",
@@ -13,6 +15,8 @@
     "recharts": "^1.0.0-beta.2"
   },
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
