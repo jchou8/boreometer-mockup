@@ -26,9 +26,11 @@ const ROOMS = [
 
 let lineChartValues = [];
 let areaChartValues = [];
+let distrChartValues = [];
 let curAvg = 3;
 let curUsers = 60;
 let curVotes = 40;
+let curDistr = {1: 8, 2: 8, 3: 8, 4: 8, 5: 8};
 
 for (let i = 0; i < 48; i++) {
   let minute = i < 10 ? '0' + i : i;
@@ -50,6 +52,25 @@ for (let i = 0; i < 48; i++) {
     curVotes = 0;
   }
 
+  for (let j = 1; j <= 5; j++) {
+    curDistr[j] += (Math.floor(Math.random() * 3) - 1)
+    if (curDistr[j] < 0) {
+      curDistr[j] = 0;
+    }
+  }
+
+  let totUsers = 0;
+  for (let j = 1; j <= 5; j++) {
+    totUsers += curDistr[j];
+  }
+
+  let curPct = {};
+  for (let j = 1; j <= 5; j++) {
+    curPct[j] = curDistr[j] / totUsers;
+  }
+  curPct.time = '12:' + minute;
+
+
   lineChartValues.push({
     time: '12:' + minute,
     avg: Math.round(curAvg * 100) / 100,
@@ -60,6 +81,9 @@ for (let i = 0; i < 48; i++) {
     users: curUsers,
     votes: curVotes
   });
+
+  distrChartValues.push(curPct);
+  console.log(curPct);
 }
 
 
@@ -583,7 +607,7 @@ class presenterView extends Component {
           </Row>
 
           <Row className="text-center">
-            <Col xs="12">
+            <Col xs="12" sm="6">
               <h2>Average engagement over time</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={lineChartValues}>
@@ -592,6 +616,19 @@ class presenterView extends Component {
                   <Tooltip />
                   <Line yAxisId="left" dataKey="avg" dot={false} stroke="#1e88e5" />
                 </LineChart>
+              </ResponsiveContainer>
+            </Col>
+
+            <Col xs="12" sm="6">
+              <h2>Audience over time</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={areaChartValues}>
+                  <XAxis dataKey="time" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area dataKey="users" />
+                  <Area dataKey="votes" />
+                </AreaChart>
               </ResponsiveContainer>
             </Col>
 
@@ -608,14 +645,17 @@ class presenterView extends Component {
             </Col>
 
             <Col xs="12" sm="6">
-              <h2>Audience over time</h2>
+              <h2>Distribution over time</h2>
               <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={areaChartValues}>
+                <AreaChart data={distrChartValues}>
                   <XAxis dataKey="time" />
-                  <YAxis />
+                  <YAxis tickFormatter={(decimal, fixed = 0) => `${(decimal * 100).toFixed(fixed)}%` } domain={[0, 1]}/>
                   <Tooltip />
-                  <Area dataKey="users" />
-                  <Area dataKey="votes" />
+                  <Area dataKey="1" stackId="1" stroke="#d84315" fill="#d84315"/>
+                  <Area dataKey="2" stackId="1" stroke="#f9a825" fill="#f9a825"/>
+                  <Area dataKey="3" stackId="1" stroke="#fdd835" fill="#fdd835"/>
+                  <Area dataKey="4" stackId="1" stroke="#8bc34a" fill="#8bc34a"/>
+                  <Area dataKey="5" stackId="1" stroke="#43a047" fill="#43a047"/>
                 </AreaChart>
               </ResponsiveContainer>
             </Col>
