@@ -53,6 +53,9 @@ Label {
 
 .rating-buttons Button{
   width: 20%;
+  white-space: normal;
+  font-size: 0.8rem;
+  vertical-align: text-top;
 }
 
 .rating-button {

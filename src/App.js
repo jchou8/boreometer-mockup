@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import './App.css';
 import logo from './logo.png';
 import { BrowserRouter, Route, Switch, Link } from 'react-router-dom';
-import { Form, FormGroup, Label, Input, Button, ButtonGroup, Row, Col, ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem, Card, CardBody, CardTitle, CardSubtitle, CardText } from 'reactstrap';
-import { BarChart, XAxis, YAxis, Bar, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Form, FormGroup, FormFeedback, Label, Input, Modal, ModalHeader, ModalBody, ModalFooter, Button, ButtonGroup, Row, Col, ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem, Card, CardBody, CardTitle, CardText } from 'reactstrap';
+import { BarChart, XAxis, YAxis, Bar, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
 
 const labels = ['Very bored', 'Bored', 'Neutral', 'Engaged', 'Very engaged'];
 let EXAMPLE_DATA = [];
@@ -15,20 +15,20 @@ let numOnline = Math.floor(EXAMPLE_DATA.length * (1 + Math.random() * 1.5));
 
 const ROOMS = [
   {
-    name: 'INFO 343',
     code: 'info343',
     last: '2017-11-16'
   },
   {
-    name: 'INFO 445',
     code: 'info445',
     last: '2017-11-21'
   }
 ]
 
 let lineChartValues = [];
+let areaChartValues = [];
 let curAvg = 3;
 let curUsers = 60;
+let curVotes = 40;
 
 for (let i = 0; i < 48; i++) {
   let minute = i < 10 ? '0' + i : i;
@@ -45,10 +45,20 @@ for (let i = 0; i < 48; i++) {
     curUsers = 0;
   }
 
+  curVotes += (Math.floor(Math.random() * 3) - 1);
+  if (curVotes < 0) {
+    curVotes = 0;
+  }
+
   lineChartValues.push({
     time: '12:' + minute,
     avg: Math.round(curAvg * 100) / 100,
-    users: curUsers
+  });
+
+  areaChartValues.push({
+    time: '12:' + minute,
+    users: curUsers,
+    votes: curVotes
   });
 }
 
@@ -73,7 +83,6 @@ class App extends Component {
             <Route path='/room/:roomCode' component={audienceView} />
             <Route path='/presenter' component={presenterDashboard} />
             <Route path='/presenterview' component={presenterView} />
-            <Route path='/create' component={createRoom} />
             <Route path='/details' component={roomDetails} />
           </Switch>
         </div>
@@ -128,6 +137,9 @@ class splashScreen extends Component {
 
           <div className="presenter-splash">
             <h2>Presenters</h2>
+            <p>
+              To create a room, please log in or register an account.
+            </p>
             <Link to="/login">
               <Button color="primary">
                 <i className="fa fa-sign-in" aria-hidden="true"></i> Login
@@ -162,8 +174,8 @@ class loginScreen extends Component {
         <div className="container">
           <Form>
             <FormGroup>
-              <Label for="email">Email</Label>
-              <Input type="email" name="email" id="email" placeholder="example@example.com" />
+              <Label for="username">Username</Label>
+              <Input type="text" name="username" id="username" />
 
               <Label for="password">Password</Label>
               <Input type="password" name="password" id="password" />
@@ -173,10 +185,6 @@ class loginScreen extends Component {
                 <i className="fa fa-sign-in" aria-hidden="true"></i> Login
               </Button>
             </Link>{' '}
-
-            <Button color="info">
-              <i className="fa fa-question-circle" aria-hidden="true"></i> Forgot password?
-              </Button>
           </Form>
         </div>
       </div>
@@ -185,7 +193,62 @@ class loginScreen extends Component {
 }
 
 class registerScreen extends Component {
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      username: undefined,
+      password: undefined,
+      passwordConfirm: undefined
+    }
+  }
+
+  handleChange(event) {
+    let newState = {};
+    newState[event.target.name] = event.target.value;
+    this.setState(newState);
+  }
+
+  validateUsername(username) {
+    if (username !== undefined) {
+      if (username.length > 20 || username.length < 4) {
+        return 'Display name must be between 4 and 20 characters long.';
+      }
+    }
+    return undefined;
+  }
+
+
+  validatePassword(password) {
+    if (password !== undefined) {
+      if (password.length < 6) {
+        return 'Password must be at least 6 characters long.';
+      }
+    }
+    return undefined;
+  }
+
+  confirmPassword(password, passwordConfirm) {
+    if (passwordConfirm !== undefined) {
+      if (passwordConfirm !== password) {
+        return 'Passwords do not match.';
+      }
+    }
+    return undefined;
+  }
+
   render() {
+    let nameError = this.validateUsername(this.state.username);
+    let pwError = this.validatePassword(this.state.password);
+    let pwMismatch = this.confirmPassword(this.state.password, this.state.passwordConfirm);
+
+    let nameValid = this.state.username ? nameError === undefined : undefined;
+    let pwValid = this.state.password ? pwError === undefined : undefined;
+    let pwConfValid = this.state.passwordConfirm ? pwMismatch === undefined : undefined;
+
+    let enableSignup = nameValid && pwValid && pwConfValid;
+
     return (
       <div>
         <header className="App-header page-header">
@@ -201,17 +264,34 @@ class registerScreen extends Component {
         <div className="container">
           <Form>
             <FormGroup>
-              <Label for="email">Email</Label>
-              <Input type="email" name="email" id="email" placeholder="example@example.com" />
-
-              <Label for="password">Password</Label>
-              <Input type="password" name="password" id="password" />
-
-              <Label for="passwordConfirm">Confirm password</Label>
-              <Input type="password" name="passwordConfirm" id="passwordConfirm" />
+              <Label for='username'>Username</Label>
+              <Input type='text' name='username' id='username'
+                valid={nameValid}
+                onChange={(e) => this.handleChange(e)}
+              />
+              {nameError !== undefined && <FormFeedback>{nameError}</FormFeedback>}
             </FormGroup>
+
+            <FormGroup>
+              <Label for='password'>Password</Label>
+              <Input type='password' name='password' id='password'
+                onChange={(e) => this.handleChange(e)}
+                valid={pwValid}
+              />
+              {pwError !== undefined && <FormFeedback>{pwError}</FormFeedback>}
+            </FormGroup>
+
+            <FormGroup>
+              <Label for='passwordConfirm'>Confirm Password</Label>
+              <Input type='password' name='passwordConfirm' id='passwordConfirm'
+                onChange={(e) => this.handleChange(e)}
+                valid={pwConfValid}
+              />
+              {pwMismatch !== undefined && <FormFeedback>{pwMismatch}</FormFeedback>}
+            </FormGroup>
+
             <Link to={"/presenter"}>
-              <Button color="primary">
+              <Button color="primary" disabled={!enableSignup}>
                 <i className="fa fa-user-plus" aria-hidden="true"></i> Register
               </Button>
             </Link>
@@ -287,11 +367,11 @@ class audienceView extends Component {
           }
 
           <ButtonGroup className="rating-buttons">
-            <Button color="danger" onClick={() => this.onRadioBtnClick(1)} active={this.state.rating === 1}><p className="rating-button">1</p>Very bored</Button>
-            <Button color="warning" onClick={() => this.onRadioBtnClick(2)} active={this.state.rating === 2}><p className="rating-button">2</p>Bored</Button>
-            <Button color="secondary" onClick={() => this.onRadioBtnClick(3)} active={this.state.rating === 3}><p className="rating-button">3</p>Neutral</Button>
-            <Button color="info" onClick={() => this.onRadioBtnClick(4)} active={this.state.rating === 4}><p className="rating-button">4</p>Engaged</Button>
-            <Button color="success" onClick={() => this.onRadioBtnClick(5)} active={this.state.rating === 5}><p className="rating-button">5</p>Very engaged</Button>
+            <Button color="danger" onClick={() => this.onRadioBtnClick(1)} outline={this.state.rating !== 1}><p className="rating-button">1</p>Very bored</Button>
+            <Button color="warning" onClick={() => this.onRadioBtnClick(2)} outline={this.state.rating !== 2}><p className="rating-button">2</p>Bored</Button>
+            <Button color="secondary" onClick={() => this.onRadioBtnClick(3)} outline={this.state.rating !== 3}><p className="rating-button">3</p>Neutral</Button>
+            <Button color="info" onClick={() => this.onRadioBtnClick(4)} outline={this.state.rating !== 4}><p className="rating-button">4</p>Engaged</Button>
+            <Button color="success" onClick={() => this.onRadioBtnClick(5)} outline={this.state.rating !== 5}><p className="rating-button">5</p>Very engaged</Button>
           </ButtonGroup>
         </div>
       </div>
@@ -314,7 +394,10 @@ class presenterDashboard extends Component {
     super(props);
 
     this.state = {
-      dropdownOpen: false
+      dropdownOpen: false,
+      modal: false,
+      modal2: false,
+      modalDel: false
     };
   }
 
@@ -324,13 +407,30 @@ class presenterDashboard extends Component {
     });
   }
 
+  toggleModal() {
+    this.setState({
+      modal: !this.state.modal
+    });
+  }
+
+  toggleModal2() {
+    this.setState({
+      modal2: !this.state.modal2
+    });
+  }
+
+  toggleModalDel() {
+    this.setState({
+      modalDel: !this.state.modalDel
+    });
+  }
+
   render() {
     let rooms = ROOMS.map((room) => {
       return (
-        <Card>
+        <Card key={room.code}>
           <CardBody>
-            <CardTitle>{room.name}</CardTitle>
-            <CardSubtitle>Room code: {room.code}</CardSubtitle>
+            <CardTitle>{room.code}</CardTitle>
             <CardText>Last presented {room.last}</CardText>
 
             <Link to={"/presenterview"}>
@@ -338,12 +438,12 @@ class presenterDashboard extends Component {
                 <i className="fa fa-play" aria-hidden="true"></i> Start
               </Button>
             </Link>{' '}
-            <Link to={"/roomdetails"}>
+            <Link to={"/details"}>
               <Button color="info">
                 <i className="fa fa-line-chart" aria-hidden="true"></i> Details
               </Button>
             </Link>{' '}
-            <Button color="danger">
+            <Button color="danger" onClick={() => this.toggleModalDel()}>
               <i className="fa fa-trash" aria-hidden="true"></i> Delete
             </Button>
           </CardBody>
@@ -367,12 +467,8 @@ class presenterDashboard extends Component {
               Create Room
             </DropdownToggle>
             <DropdownMenu>
-              <Link to="/create">
-                <DropdownItem>Single-use room</DropdownItem>
-              </Link>
-              <Link to="/create">
-                <DropdownItem>Multi-use room</DropdownItem>
-              </Link>
+              <DropdownItem onClick={() => this.toggleModal()}>Single-use room</DropdownItem>
+              <DropdownItem onClick={() => this.toggleModal2()}>Multi-use room</DropdownItem>
             </DropdownMenu>
           </ButtonDropdown>
         </header>
@@ -380,6 +476,39 @@ class presenterDashboard extends Component {
         <div className="container">
           {rooms}
         </div>
+
+        <Modal isOpen={this.state.modal} toggle={() => this.toggleModal()} className={this.props.className}>
+          <ModalHeader toggle={() => this.toggleModal()}>Create single-use room</ModalHeader>
+          <ModalBody>
+            <Label for="roomCode">Room Code</Label>
+            <Input type="text" name="roomCode" id="roomCode" placeholder="example-room-257" />
+          </ModalBody>
+          <ModalFooter>
+            <Link to="/presenterview">
+              <Button color="success" onClick={() => this.toggleModal()}><i className="fa fa-play" aria-hidden="true"></i> Start</Button>
+            </Link>
+          </ModalFooter>
+        </Modal>
+
+
+        <Modal isOpen={this.state.modal2} toggle={() => this.toggleModal2()} className={this.props.className}>
+          <ModalHeader toggle={() => this.toggleModal2()}>Create multi-use room</ModalHeader>
+          <ModalBody>
+            <Label for="roomCode">Room Code</Label>
+            <Input type="text" name="roomCode" id="roomCode" placeholder="example-room-257" />
+          </ModalBody>
+          <ModalFooter>
+            <Button color="success" onClick={() => this.toggleModal2()}><i className="fa fa-plus" aria-hidden="true"></i> Create Room</Button>
+          </ModalFooter>
+        </Modal>
+
+        <Modal isOpen={this.state.modalDel} toggle={() => this.toggleModalDel()} className={this.props.className}>
+          <ModalHeader toggle={() => this.toggleModalDel()}>Are you sure you want to delete room <strong>info343</strong>?</ModalHeader>
+          <ModalFooter>
+            <Button color="secondary" onClick={() => this.toggleModalDel()}><i className="fa fa-ban" aria-hidden="true"></i> Cancel</Button>
+            <Button color="danger" onClick={() => this.toggleModalDel()}><i className="fa fa-trash" aria-hidden="true"></i> Delete</Button>
+          </ModalFooter>
+        </Modal>
       </div>
     );
   }
@@ -426,20 +555,14 @@ class presenterView extends Component {
             </Link>
           }
 
-          {this.state.stopped &&
-            <Button color="info" className="float-right">
-              <i className="fa fa-download" aria-hidden="true"></i> Download Data
-            </Button>
-          }
-
-          <h1 className="App-title">INFO 343</h1>
+          <h1 className="App-title">info343</h1>
         </header>
 
         <div className="container">
 
           <div className="room-status text-center">
             {!this.state.stopped &&
-              <span>Room code: <strong>info343</strong><br />Open for 47 minutes</span>
+              <span>Open for 47 minutes</span>
             }
 
             {this.state.stopped &&
@@ -447,35 +570,7 @@ class presenterView extends Component {
             }
           </div>
 
-          <Row className="text-center">
-            <Col xs="6">
-              <h2>Average engagement over time</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={lineChartValues}>
-                  <XAxis dataKey="time" />
-                  <YAxis yAxisId="left" domain={[1, 5]} />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip />
-                  <Line yAxisId="left" dataKey="avg" dot={false} stroke="#1e88e5" />
-                  <Line yAxisId="right" dataKey="users" dot={false} stroke="#5e35b1" />
-                </LineChart>
-              </ResponsiveContainer>
-            </Col>
-
-            <Col xs="6">
-              <h2>Current engagement</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartValues}>
-                  <XAxis dataKey="level" type="number" domain={[0.5, 5.5]} ticks={[1, 2, 3, 4, 5]} />
-                  <YAxis />
-                  <Tooltip content={renderTooltip} />
-                  <Bar dataKey="Count" fill="#2196f3" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Col>
-          </Row>
-
-          <Row className="audience-stats">
+          <Row className="audience-stats text-center">
             <Col xs="4">
               <strong>{numOnline}</strong> users connected
             </Col>
@@ -486,41 +581,45 @@ class presenterView extends Component {
               <strong>{avgResponse}</strong> average
             </Col>
           </Row>
-        </div>
-      </div>
-    );
-  }
-}
 
-class createRoom extends Component {
-  render() {
-    return (
-      <div>
-        <header className="App-header page-header">
-          <Link to="/presenter" className="float-left">
-            <Button color="secondary">
-              <i className="fa fa-arrow-circle-left" aria-hidden="true"></i> Back
-          </Button>
-          </Link>
+          <Row className="text-center">
+            <Col xs="12">
+              <h2>Average engagement over time</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={lineChartValues}>
+                  <XAxis dataKey="time" />
+                  <YAxis yAxisId="left" domain={[1, 5]} />
+                  <Tooltip />
+                  <Line yAxisId="left" dataKey="avg" dot={false} stroke="#1e88e5" />
+                </LineChart>
+              </ResponsiveContainer>
+            </Col>
 
-          <h1 className="App-title">Create Room</h1>
-        </header>
+            <Col xs="12" sm="6">
+              <h2>Current engagement</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartValues}>
+                  <XAxis dataKey="level" type="number" domain={[0.5, 5.5]} ticks={[1, 2, 3, 4, 5]} />
+                  <YAxis />
+                  <Tooltip content={renderTooltip} />
+                  <Bar dataKey="Count" fill="#2196f3" />
+                </BarChart>
+              </ResponsiveContainer>
+            </Col>
 
-        <div className="container">
-          <Form>
-            <FormGroup>
-              <Label for="roomCode">Room Code</Label>
-              <Input type="text" name="roomCode" id="roomCode" placeholder="cool-nice-123" />
-
-              <Label for="roomName">Room Name</Label>
-              <Input type="text" name="roomName" id="roomName" placeholder="Cool and Good" />
-            </FormGroup>
-            <Link to={"/presenterview"}>
-              <Button color="primary">
-                <i className="fa fa-user-plus" aria-hidden="true"></i> Create
-              </Button>
-            </Link>
-          </Form>
+            <Col xs="12" sm="6">
+              <h2>Audience over time</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={areaChartValues}>
+                  <XAxis dataKey="time" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area dataKey="users" />
+                  <Area dataKey="votes" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </Col>
+          </Row>
         </div>
       </div>
     );
@@ -528,13 +627,6 @@ class createRoom extends Component {
 }
 
 class roomDetails extends Component {
-
-  constructor(props) {
-    super(props);
-
-    this.state = {};
-  }
-
   render() {
     return (
       <div>
@@ -549,7 +641,7 @@ class roomDetails extends Component {
             <i className="fa fa-download" aria-hidden="true"></i> Download Data
             </Button>
 
-          <h1 className="App-title">History - INFO 343</h1>
+          <h1 className="App-title">info343 Details</h1>
         </header>
 
         <div className="container">
